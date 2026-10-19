@@ -1,0 +1,37 @@
+data:
+  source: kagglehub         # kagglehub | local
+  kagglehub:
+    kind: competition       # competition | dataset
+    handle: m5-forecasting-accuracy
+  dir: data                 # nur fuer source: local
+  sales_file: sales_train_evaluation.csv
+  # Stichprobe (Rechenzeit/Speicher wachsen etwa linear mit der Serienzahl):
+  #   Stufe 1: stores [CA_1], categories [FOODS], max_series 500   (schneller Test)
+  #   Stufe 2: stores [CA_1], categories null,    max_series null  (alle 3.049 Serien einer Filiale)
+  #   Stufe 3: stores [CA_1, CA_2, CA_3, CA_4], max_series null    (ca. 12.000 Serien, viel RAM)
+  stores: [CA_1]
+  categories: null          # null = alle Kategorien
+  max_series: null          # null = alle Serien des Filters, sonst geschichtet nach Abteilung
+  seed: 42
+
+forecast:
+  horizon: 28               # Prognosehorizont in Tagen
+  train_days: 730           # Trainingsfenster vor dem Cutoff
+  quantiles: [0.5, 0.8, 0.9, 0.95, 0.99]
+  backend: lightgbm         # alternativ: sklearn
+  model_params:
+    n_estimators: 300
+    learning_rate: 0.05
+    num_leaves: 63
+    min_child_samples: 50
+
+inventory:
+  lead_time: 3              # Lieferzeit in Tagen (Annahme!)
+  z_grid: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]      # Baseline: Mittelwert + z * Sigma
+  quantile_grid: [0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.975, 0.99]  # Quantile der Bedarfssumme
+  empirical_days: 84        # Rueckblick der empirischen Baseline
+  service_levels: [0.90, 0.95, 0.98]   # Zielwerte fuer den Vergleich
+  cost_ratios: [5, 10, 20, 50, 100]    # Kosten einer entgangenen Einheit / Lagerkosten je Einheit und Tag
+
+evaluation:
+  n_splits: 3               # rollierende Ursprungszeitpunkte fuer die Baselines
