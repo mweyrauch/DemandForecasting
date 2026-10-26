@@ -22,6 +22,9 @@ data:
     handle: m5-forecasting-accuracy
 ```
 
+Hinweis: Auch ueber kagglehub gelten die Nutzungsbedingungen der Quelle. Bei
+Datensaetzen von Dritten (``kind: dataset``) gilt zusaetzlich die Lizenz des jeweiligen
+Datensatzes.
 
 ## Variante B: lokale Dateien
 

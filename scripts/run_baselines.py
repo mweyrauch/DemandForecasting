@@ -23,7 +23,8 @@ def main():
                           d["max_series"], d["seed"])
     _, mat, _ = sales_matrix(sales)
     h = f["horizon"]
-    cutoffs = rolling_origin_cutoffs(mat.shape[1], h, cfg["evaluation"]["n_splits"])
+    cutoffs = rolling_origin_cutoffs(mat.shape[1], h, cfg["evaluation"]["n_splits"],
+                                     cfg["evaluation"].get("step_days"))
 
     rows = []
     for c in cutoffs:

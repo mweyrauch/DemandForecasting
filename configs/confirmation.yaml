@@ -1,0 +1,15 @@
+# Auswertungslaeufe fuer die Bestaetigung (siehe scripts/run_confirmation.py).
+# "args" ueberschreibt Werte der Basis-Konfiguration; nichts am Modell wird veraendert.
+runs:
+  - name: CA_1 (Hauptlauf)
+    out_dir: results
+    args: {}
+  - name: CA_2
+    out_dir: results/confirm_CA_2
+    args: {stores: [CA_2]}
+  - name: TX_1
+    out_dir: results/confirm_TX_1
+    args: {stores: [TX_1]}
+  - name: CA_1, ueber ein Jahr
+    out_dir: results/confirm_time
+    args: {step_days: 91, n_splits: 4}

@@ -1,0 +1,35 @@
+metric,comparison,estimate,ci_low,ci_high
+wape_improvement,model_q50 vs moving_average_28,0.07321629201724822,0.06647568652819809,0.07970439071774427
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_84), q=0.5",0.049835677699423986,0.038031826906232455,0.06093381544699453
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_84_floor), q=0.6",0.0615190124176197,0.05096799679996992,0.07221211981630396
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_84_floor), q=0.7",0.08053773052164137,0.06669469149425485,0.09303130920914096
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_365_floor), q=0.8",0.09054188151885312,0.07312810976137635,0.10952315567337018
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_365_floor), q=0.85",0.09068111192412975,0.07335373807719506,0.11035069936846256
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_365_floor), q=0.9",0.08837208789917839,0.07105314761938163,0.1086378421787977
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_365_floor), q=0.95",0.08889903271199873,0.06591470164706392,0.11197519818879127
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_365_floor), q=0.975",0.08964405946203136,0.06030371963139268,0.11646069637741091
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_365_floor), q=0.99",0.11355413915505719,0.0626344498476598,0.1494533945670956
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_365_floor), q=0.995",0.1577391145738165,0.09416742030101205,0.20618869396555067
+pinball_improvement,"quantile_model_window vs best empirical (baseline_empirical_q_365_floor), q=0.999",0.41723396127716883,0.29443043319301965,0.49709034827940796
+inventory_at_service_level,"quantile_model_window, SL=0.9",4.021627708428277,3.823733220742991,4.203868987637863
+inventory_at_service_level,"baseline_mean_z, SL=0.9",4.373091329932897,4.15636140582762,4.587075494267289
+inventory_at_service_level,"baseline_mean_z_floor, SL=0.9",4.311069309345231,4.096263367833037,4.509899955528817
+inventory_at_service_level,"baseline_empirical_q_84, SL=0.9",4.644926624853507,4.367975497685599,4.927959747482597
+inventory_at_service_level,"baseline_empirical_q_84_floor, SL=0.9",4.515739106553581,4.247913945840767,4.781162224554632
+inventory_at_service_level,"baseline_empirical_q_365_floor, SL=0.9",4.539651089567122,4.30940757265014,4.761802685280367
+inventory_rel_diff,"quantile_model_window vs best baseline (baseline_mean_z_floor), SL=0.9",-0.06713916667716813,-0.08328247257852106,-0.05027319010548352
+inventory_at_service_level,"quantile_model_window, SL=0.95",5.67078811372445,5.372266414223544,5.966774914989253
+inventory_at_service_level,"baseline_mean_z, SL=0.95",7.341609468885137,6.7083523260793605,8.088986642950772
+inventory_at_service_level,"baseline_mean_z_floor, SL=0.95",6.945905925771375,6.439671811617208,7.558006436663213
+inventory_at_service_level,"baseline_empirical_q_84, SL=0.95",7.00799846897499,6.542304610580263,7.539427740516742
+inventory_at_service_level,"baseline_empirical_q_84_floor, SL=0.95",6.822146683840517,6.368088927978769,7.294157864071973
+inventory_at_service_level,"baseline_empirical_q_365_floor, SL=0.95",6.384963599578853,6.0419874058659175,6.7311145892615025
+inventory_rel_diff,"quantile_model_window vs best baseline (baseline_empirical_q_365_floor), SL=0.95",-0.11185271062492974,-0.13595416482614286,-0.08992028555318908
+inventory_at_service_level,"quantile_model_window, SL=0.98",8.008723126268762,7.599113207006892,8.662149061891837
+inventory_at_service_level,"baseline_empirical_q_365_floor, SL=0.98",9.083230283458105,8.525789046459469,9.7051169961986
+inventory_rel_diff,"quantile_model_window vs best baseline (baseline_empirical_q_365_floor), SL=0.98",-0.11829570798685773,-0.14162822519186136,-0.08066314896345969
+cost_rel_diff,"quantile_model_window vs best baseline (baseline_mean_z), r=5",-0.019694305191764183,-0.02936594505637322,-0.009342633071119537
+cost_rel_diff,"quantile_model_window vs best baseline (baseline_mean_z_floor), r=10",-0.013273239164076411,-0.02458236288000869,-0.0036577291202892757
+cost_rel_diff,"quantile_model_window vs best baseline (baseline_mean_z_floor), r=20",-0.05756568595307088,-0.06809000126880052,-0.04587482427311113
+cost_rel_diff,"quantile_model_window vs best baseline (baseline_empirical_q_365_floor), r=50",-0.08395135746556537,-0.10270558742118624,-0.06624296579574017
+cost_rel_diff,"quantile_model_window vs best baseline (baseline_empirical_q_365_floor), r=100",-0.08588040261458008,-0.1081681143048624,-0.06114396030185742

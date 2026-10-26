@@ -13,7 +13,13 @@ import pandas as pd
 CAT_FEATURES = ["item_code", "store_code", "dept_code"]
 
 
-def build_features(df: pd.DataFrame, horizon: int = 28) -> tuple[pd.DataFrame, list[str]]:
+def required_history(horizon: int, long_windows=()) -> int:
+    """Tage Vorlauf, die vor dem ersten Trainingstag geladen werden muessen."""
+    return max(56, horizon + max(long_windows, default=0))
+
+
+def build_features(df: pd.DataFrame, horizon: int = 28,
+                   long_windows=(91, 182, 364)) -> tuple[pd.DataFrame, list[str]]:
     df = df.sort_values(["id", "date"]).reset_index(drop=True)
     g = df.groupby("id")["sales"]
 
@@ -27,7 +33,28 @@ def build_features(df: pd.DataFrame, horizon: int = 28) -> tuple[pd.DataFrame, l
     for w in (7, 28):
         name = f"rmean_{horizon}_{w}"
         roll = shifted.groupby(df["id"]).rolling(w, min_periods=1).mean()
-        df[name] = roll.reset_index(level=0, drop=True)
+        df[name] = roll.reset_index(level=0, drop=True).astype("float32")
+        feats.append(name)
+
+    # Langfristmerkmale: gleiche Verschiebung um ``horizon`` Tage wie oben (kein Leakage)
+    long_windows = tuple(sorted(long_windows or ()))
+    if long_windows:
+        by_id = df["id"]
+        for wdw in long_windows:
+            name = f"rmean_{horizon}_{wdw}"
+            roll = shifted.groupby(by_id).rolling(wdw, min_periods=max(1, wdw // 2)).mean()
+            df[name] = roll.reset_index(level=0, drop=True).astype("float32")
+            feats.append(name)
+        zero = (df["sales"] == 0).astype("float32").where(df["sales"].notna())
+        zero_shifted = zero.groupby(by_id).shift(horizon)
+        for wdw in sorted({long_windows[0], long_windows[-1]}):
+            name = f"rzero_{horizon}_{wdw}"
+            roll = zero_shifted.groupby(by_id).rolling(wdw, min_periods=max(1, wdw // 2)).mean()
+            df[name] = roll.reset_index(level=0, drop=True).astype("float32")
+            feats.append(name)
+        name = f"rstd_{horizon}_{long_windows[0]}"
+        roll = shifted.groupby(by_id).rolling(long_windows[0], min_periods=max(2, long_windows[0] // 2)).std()
+        df[name] = roll.reset_index(level=0, drop=True).astype("float32")
         feats.append(name)
 
     # Preis ist zum Planungszeitpunkt bekannt -> kein Leakage

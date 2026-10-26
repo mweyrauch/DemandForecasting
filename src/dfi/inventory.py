@@ -97,3 +97,19 @@ def best_cost_by_ratio(results: pd.DataFrame, ratios) -> pd.DataFrame:
                          "cost": best["cost"], "fill_rate": best["fill_rate"],
                          "avg_inventory": best["avg_inventory"]})
     return pd.DataFrame(rows)
+
+
+def policy_name(spec: dict) -> str:
+    """Eindeutiger Name einer Baseline-Variante aus ihrer Konfiguration.
+
+    ``{"type": "mean_z"}``                              -> ``baseline_mean_z``
+    ``{"type": "empirical", "days": 84, "floor": true}`` -> ``baseline_empirical_q_84_floor``
+    """
+    kind = spec["type"]
+    if kind == "mean_z":
+        base = "baseline_mean_z"
+    elif kind == "empirical":
+        base = f"baseline_empirical_q_{int(spec['days'])}"
+    else:
+        raise ValueError(f"Unbekannter Baseline-Typ: {kind}")
+    return base + ("_floor" if spec.get("floor") else "")

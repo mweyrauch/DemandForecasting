@@ -18,7 +18,8 @@ data:
 forecast:
   horizon: 28               # Prognosehorizont in Tagen
   train_days: 500
-  quantiles: [0.5, 0.8, 0.9, 0.95, 0.99]
+  long_windows: [42, 84, 112]   # kurze Fenster, weil die synthetischen Daten nur 800 Tage haben
+  quantiles: [0.5, 0.9]      # taegliche Quantile (nur fuer Genauigkeitsmetriken)
   backend: sklearn
   model_params:
     n_estimators: 100
@@ -28,11 +29,21 @@ forecast:
 
 inventory:
   lead_time: 3              # Lieferzeit in Tagen (Annahme!)
-  z_grid: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]      # Baseline: Mittelwert + z * Sigma
-  quantile_grid: [0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.975, 0.99]  # Quantile der Bedarfssumme
-  empirical_days: 84        # Rueckblick der empirischen Baseline
+  z_grid: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 7.0, 8.0]  # Baseline: Mittelwert + z * Sigma
+  quantile_grid: [0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995, 0.999]  # Quantile der Bedarfssumme
+  min_stock: 1              # Mindestbestand in Einheiten (nur Politiken mit "floor")
+  model_floor: true         # Quantilmodell zusaetzlich mit Mindestbestand (faire Gegenprobe)
+  baselines:                # alle werden ausgewertet; "floor" = Zielniveau mindestens min_stock
+    - {type: mean_z}
+    - {type: mean_z, floor: true}
+    - {type: empirical, days: 84}
+    - {type: empirical, days: 84, floor: true}
+    - {type: empirical, days: 365, floor: true}
   service_levels: [0.90, 0.95, 0.98]   # Zielwerte fuer den Vergleich
   cost_ratios: [5, 10, 20, 50, 100]    # Kosten einer entgangenen Einheit / Lagerkosten je Einheit und Tag
 
 evaluation:
-  n_splits: 3               # rollierende Ursprungszeitpunkte fuer die Baselines
+  step_days: null           # Abstand der Cutoffs in Tagen; null = horizon (direkt aufeinanderfolgend)
+  n_splits: 3               # rollierende Cutoffs (je 28 Tage Test), fuer Baselines und Quantil-Modelle
+  n_bootstrap: 100          # Ziehungen fuer die Konfidenzintervalle (Artikel mit Zuruecklegen)
+  bootstrap_seed: 0

@@ -46,3 +46,11 @@ def test_best_cost_by_ratio_picks_cheapest_parameter():
     low = best_cost_by_ratio(res, [1]).iloc[0]    # Fehlmengen billig -> kleines Lager
     high = best_cost_by_ratio(res, [100]).iloc[0]  # Fehlmengen teuer -> grosses Lager
     assert low["best_param"] == 1 and high["best_param"] == 2
+
+
+def test_policy_name_convention():
+    from dfi.inventory import policy_name
+    assert policy_name({"type": "mean_z"}) == "baseline_mean_z"
+    assert policy_name({"type": "mean_z", "floor": True}) == "baseline_mean_z_floor"
+    assert policy_name({"type": "empirical", "days": 84}) == "baseline_empirical_q_84"
+    assert policy_name({"type": "empirical", "days": 365, "floor": True}) == "baseline_empirical_q_365_floor"

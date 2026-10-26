@@ -1,0 +1,7 @@
+policy,max_fill_rate
+quantile_model_window,0.9984302724818688
+baseline_mean_z,0.9754790392068607
+baseline_mean_z_floor,0.9794740499626589
+baseline_empirical_q_84,0.9717309217247754
+baseline_empirical_q_84_floor,0.9736773467439048
+baseline_empirical_q_365_floor,0.9948637357285044

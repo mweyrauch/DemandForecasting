@@ -27,3 +27,33 @@ def predict_quantiles(models: dict, X) -> dict:
     stacked = np.column_stack([models[q].predict(X) for q in qs])
     stacked = np.maximum.accumulate(np.clip(stacked, 0, None), axis=1)
     return {q: stacked[:, i] for i, q in enumerate(qs)}
+
+
+def feature_importance(model, feats, backend, X=None, y=None, q: float = 0.5,
+                       n_sample: int = 3000, seed: int = 0) -> np.ndarray:
+    """Normierte Merkmalswichtigkeit (Summe 1).
+
+    lightgbm: Gain, also der summierte Gewinn aller Splits eines Merkmals.
+    sklearn:  Permutationswichtigkeit auf einer Stichprobe (Anstieg des Pinball-Loss).
+    Hinweis: Beide Masse sind keine kausalen Effekte; korrelierte Merkmale teilen sich die
+    Wichtigkeit.
+    """
+    if backend == "lightgbm":
+        imp = np.asarray(model.booster_.feature_importance(importance_type="gain"), float)
+    elif backend == "sklearn":
+        from sklearn.inspection import permutation_importance
+        from sklearn.metrics import make_scorer, mean_pinball_loss
+        idx = np.random.default_rng(seed).choice(len(X), size=min(n_sample, len(X)), replace=False)
+        scorer = make_scorer(mean_pinball_loss, alpha=q, greater_is_better=False)
+        res = permutation_importance(model, X.iloc[idx][feats], np.asarray(y)[idx], scoring=scorer,
+                                     n_repeats=2, random_state=seed)
+        imp = np.clip(res.importances_mean, 0, None)
+    else:
+        raise ValueError(f"Unbekanntes Backend: {backend}")
+    total = imp.sum()
+    return imp / total if total > 0 else imp
+
+
+def feature_importance_all(models: dict, feats, backend, X=None, y=None) -> dict:
+    """Wichtigkeit je Quantilmodell: {q: Array ueber die Merkmale}."""
+    return {q: feature_importance(m, feats, backend, X, y, q) for q, m in models.items()}

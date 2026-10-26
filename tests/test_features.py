@@ -39,3 +39,28 @@ def test_window_train_mask_prevents_leakage_into_test():
     mask = window_train_mask(dates, cutoff.to_datetime64(), lead_time)
     last_start = dates[mask].max()
     assert last_start + pd.Timedelta(days=lead_time) < cutoff
+
+
+def test_long_window_features_match_manual_computation_and_use_only_past():
+    from dfi.features import build_features
+    rng = np.random.default_rng(1)
+    n, h, w = 400, 28, 91
+    dates = pd.date_range("2020-01-01", periods=n)
+    sales = rng.poisson(0.6, n).astype("float32")
+    df = pd.DataFrame({"id": "A", "item_id": "A", "store_id": "S", "dept_id": "D", "date": dates,
+                       "sales": sales, "sell_price": 1.0, "event_name_1": None, "snap": 0,
+                       "wday": dates.weekday + 1, "month": dates.month})
+    out, feats = build_features(df, horizon=h, long_windows=(w, 182))
+    t_ = 300
+    window = sales[t_ - h - w + 1: t_ - h + 1]          # endet h Tage vor t_
+    row = out.iloc[t_]
+    assert abs(row[f"rmean_{h}_{w}"] - window.mean()) < 1e-5
+    assert abs(row[f"rzero_{h}_{w}"] - (window == 0).mean()) < 1e-5
+    assert abs(row[f"rstd_{h}_{w}"] - window.std(ddof=1)) < 1e-4
+    assert {f"rmean_{h}_182", f"rzero_{h}_182"} <= set(feats)
+
+
+def test_required_history_covers_longest_window():
+    from dfi.features import required_history
+    assert required_history(28, ()) == 56
+    assert required_history(28, (91, 364)) == 392
