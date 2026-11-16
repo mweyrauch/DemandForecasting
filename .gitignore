@@ -1,0 +1,13 @@
+# Rohdaten (Lizenz!) und erzeugte Ergebnisse gehören nicht ins Repository
+data/*
+!data/README.md
+results/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
