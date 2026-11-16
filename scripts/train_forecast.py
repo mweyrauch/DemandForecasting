@@ -344,8 +344,15 @@ def main():
         best_at_hist = max(reach_pts, key=reach_pts.get)
     sel = set(model_names[:1] + [best_at_hist])
     cols = [i for i, p in enumerate(policies) if p in sel]
-    bands = curve_bands(fillB[:, cols], invB[:, cols], fill1[0][cols], policies[cols])
-    plots.plot_tradeoff(curve, fig_dir / "inventory_tradeoff.png", bands=bands)
+    bands = curve_bands(fillB[:, cols], invB[:, cols], fill1[0][cols], policies[cols],
+                        min_valid=float(ev.get("band_min_valid", 0.3)))
+    for pol in plots.POLICY_ORDER:
+        if pol in bands:
+            g_ = bands[pol][0]
+            print(f"Fehlerband {label(pol)}: " + (f"Servicegrad {g_.min():.1%} bis {g_.max():.1%}"
+                  if len(g_) > 1 else "keine Rasterpunkte mit genug gueltigen Ziehungen"))
+    plots.plot_tradeoff(curve, fig_dir / "inventory_tradeoff.png", bands=bands,
+                        fill_max=ev.get("tradeoff_fill_max", 0.995))
 
     # ---- Kosten
     print("\n" + "=" * 70)

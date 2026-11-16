@@ -44,5 +44,7 @@ inventory:
 evaluation:
   step_days: null           # Abstand der Cutoffs in Tagen; null = horizon (direkt aufeinanderfolgend)
   n_splits: 3               # rollierende Cutoffs (je 28 Tage Test), fuer Baselines und Quantil-Modelle
+  band_min_valid: 0.3       # Fehlerband: Rasterpunkt erscheint, wenn mindestens dieser Anteil der Ziehungen den Servicegrad erreicht
+  tradeoff_fill_max: 0.995  # Hauptplot: Punkte oberhalb dieses Servicegrads werden nicht gezeichnet; null = alle Punkte
   n_bootstrap: 500          # Ziehungen fuer die Konfidenzintervalle (Artikel mit Zuruecklegen)
   bootstrap_seed: 0

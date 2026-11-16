@@ -158,7 +158,7 @@ je Politik eigene Farbe, Marker, Linienart und Schraffur):
 
 | Datei | Inhalt |
 |---|---|
-| `inventory_tradeoff.png` | Kompromisskurven Servicegrad gegen Lagerbestand, mit 95 %-Bootstrap-Fehlerband |
+| `inventory_tradeoff.png` | Kompromisskurven Servicegrad gegen Lagerbestand; Fehlerband (95 % Bootstrap) fuer das Modell und die beste Baseline, Rasterpunkte erscheinen ab `evaluation.band_min_valid` (Standard 0,3) gueltiger Ziehungen; Punkte oberhalb von `evaluation.tradeoff_fill_max` (Standard 99,5 %) werden nicht gezeichnet, `null` zeichnet alle |
 | `inventory_at_service_level.png` | Lagerbestand bei festem Servicegrad, Balken mit 95 %-Intervall |
 | `pinball_improvement.png` | Pinball-Verbesserung der Bedarfssumme je Quantil |
 | `cost_sensitivity.png` | Relative Kostendifferenz je Kostenverhaeltnis |
@@ -189,6 +189,10 @@ je Politik eigene Farbe, Marker, Linienart und Schraffur):
   die Ergebnisse gegen die starken Baselines bekannt waren. Das kann den Vorsprung ueberschaetzen.
   Eine Bestaetigung auf Zeitraeumen oder Filialen, die waehrend der Entwicklung nicht benutzt wurden,
   steht aus.
+- **Fehlerband an den Raendern:** Dort erreichen weniger Bootstrap-Ziehungen den jeweiligen Servicegrad.
+  Mit niedriger Schwelle (`band_min_valid`) wird das Band vollstaendig gezeichnet, stuetzt sich an den
+  Raendern aber auf weniger Ziehungen und kann verzerrt sein. Mehr Ziehungen (`n_bootstrap`) senken das
+  Rauschen, nicht die Verzerrung.
 - Nur drei Splits: Sie geben einen Hinweis auf die zeitliche Stabilitaet, aber keine statistische
   Aussage darueber.
 - Teilmenge der Daten (siehe `configs/default.yaml`), nicht der vollstaendige Datensatz.

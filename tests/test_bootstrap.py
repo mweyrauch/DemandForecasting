@@ -49,3 +49,19 @@ def test_curve_bands_are_ordered_and_bracket_point_estimate():
     assert len(grid) > 0 and (lo <= hi).all()
     mid = np.interp(grid, base_fill, base_inv)
     assert ((lo - 0.5 <= mid) & (mid <= hi + 0.5)).all()
+
+
+def test_lower_min_valid_extends_the_band_towards_the_edges():
+    from dfi.bootstrap import curve_bands
+    rng = np.random.default_rng(0)
+    B = 200
+    base_fill = np.array([0.80, 0.90, 0.97])
+    base_inv = np.array([2.0, 4.0, 8.0])
+    fill = base_fill + rng.normal(0, 0.03, (B, 3))
+    inv = base_inv + rng.normal(0, 0.2, (B, 3))
+    strict = curve_bands(fill, inv, base_fill, ["a"] * 3, n_grid=30, min_valid=0.9)["a"]
+    loose = curve_bands(fill, inv, base_fill, ["a"] * 3, n_grid=30, min_valid=0.2)["a"]
+    assert len(loose[0]) > len(strict[0])
+    assert loose[0].min() <= strict[0].min() and loose[0].max() >= strict[0].max()
+    assert len(loose[0]) == 30                               # alle Rasterpunkte vorhanden
+    assert (loose[1] <= loose[2]).all()

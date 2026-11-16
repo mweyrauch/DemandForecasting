@@ -63,13 +63,19 @@ def min_cost(C, lost, held, policies, ratio: float) -> dict:
 
 
 def curve_bands(fill, inv, fill_point, policies, n_grid: int = 40, level: float = 0.95,
-                min_valid: float = 0.9) -> dict:
+                min_valid: float = 0.3) -> dict:
     """Fehlerband der Kompromisskurve: Lagerbestand-Intervall bei gegebenem Servicegrad.
 
     Fuer jede Ziehung wird der Lagerbestand auf einem Raster von Servicegraden interpoliert;
     das Band sind die zentralen ``level`` der Ziehungen. Das Raster reicht von der kleinsten bis
     zur groessten Servicegrad-Punktschaetzung der Politik; Rasterpunkte, die in weniger als
     ``min_valid`` der Ziehungen erreichbar sind, werden weggelassen.
+
+    Je kleiner ``min_valid``, desto weiter reicht das Band an die Raender der Kurve (bei 0,9 fehlen
+    dort oft Stuecke, weil viele Ziehungen den Randservicegrad nicht erreichen). An den Raendern
+    stuetzt sich das Intervall dann auf weniger Ziehungen und kann verzerrt sein, denn es gehen nur
+    Ziehungen ein, deren Kurve diesen Servicegrad erreicht. Mit mehr Bootstrap-Ziehungen sinkt das
+    Rauschen, die Verzerrung bleibt.
 
     Rueckgabe: {Politik: (Servicegrad-Raster, untere Grenze, obere Grenze)}.
     """

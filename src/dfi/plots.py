@@ -124,8 +124,10 @@ def plot_tradeoff(curve, path, bands=None, fill_max=0.995):
     ``bands``: optional {Politik: (Servicegrad-Raster, untere Grenze, obere Grenze)} fuer das
     Bootstrap-Fehlerband (Lagerbestand-Intervall bei gegebenem Servicegrad).
     ``fill_max``: Punkte oberhalb dieses Servicegrads werden nicht gezeichnet (Saettigungsbereich,
-    in dem alle Kurven ueberlappen und die x-Achse unnoetig streckt).
+    in dem alle Kurven ueberlappen und die x-Achse unnoetig streckt); ``None`` zeichnet alle Punkte.
+    Verbindungslinie und Fehlerband enden beim letzten gezeichneten Punkt der jeweiligen Politik.
     """
+    fill_max = np.inf if fill_max is None else fill_max
     fig, ax = plt.subplots(figsize=(8, 5))
     for pol in POLICY_ORDER:
         g = curve[(curve["policy"] == pol) & (curve["fill_rate"] <= fill_max)].sort_values("fill_rate")
@@ -134,7 +136,9 @@ def plot_tradeoff(curve, path, bands=None, fill_max=0.995):
         st = POLICY_STYLE[pol]
         if bands and pol in bands and len(bands[pol][0]) > 1:
             grid, lo, hi = (np.asarray(a) for a in bands[pol])
-            keep = grid <= fill_max
+            # Band nur im Bereich der gezeichneten Punkte: Es endet wie die Verbindungslinie
+            # beim letzten (und beginnt beim ersten) gezeichneten Punkt
+            keep = (grid >= g["fill_rate"].min() - 1e-9) & (grid <= g["fill_rate"].max() + 1e-9)
             ax.fill_betweenx(grid[keep], lo[keep], hi[keep], color=st["color"], alpha=0.40,
                              linewidth=0, zorder=1)
         ax.plot(g["avg_inventory"], g["fill_rate"], color=darken(st["color"], 0.8),
