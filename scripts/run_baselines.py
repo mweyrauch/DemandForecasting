@@ -5,9 +5,9 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
-import yaml
 
 from dfi.baselines import moving_average, seasonal_naive
+from dfi.config import load_config
 from dfi.data import load_m5, resolve_data_dir, sales_matrix
 from dfi.evaluate import mase, rolling_origin_cutoffs, wape
 
@@ -16,7 +16,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/default.yaml")
     args = ap.parse_args()
-    cfg = yaml.safe_load(open(args.config))
+    cfg = load_config(args.config)
     d, f = cfg["data"], cfg["forecast"]
 
     sales, _, _ = load_m5(resolve_data_dir(d), d["sales_file"], d["stores"], d["categories"],

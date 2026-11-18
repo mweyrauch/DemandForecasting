@@ -1,51 +1,21 @@
-# Konfiguration zum schnellen Testen mit synthetischen Daten
+# Schneller Test mit synthetischen Daten (scripts/make_synthetic_m5.py).
+# Baut auf default.yaml auf und nennt nur die abweichenden Werte.
+extends: default.yaml
+
 data:
   source: local
-  kagglehub:
-    kind: competition       # competition | dataset
-    handle: m5-forecasting-accuracy
   dir: data/synthetic
-  sales_file: sales_train_evaluation.csv
-  # Stichprobe (Rechenzeit/Speicher wachsen etwa linear mit der Serienzahl):
-  #   Stufe 1: stores [CA_1], categories [FOODS], max_series 500   (schneller Test)
-  #   Stufe 2: stores [CA_1], categories null,    max_series null  (alle 3.049 Serien einer Filiale)
-  #   Stufe 3: stores [CA_1, CA_2, CA_3, CA_4], max_series null    (ca. 12.000 Serien, viel RAM)
-  stores: [CA_1]
   categories: [FOODS]
-  max_series: null          # null = alle Serien des Filters, sonst geschichtet nach Abteilung
-  seed: 42
 
 forecast:
-  horizon: 28               # Prognosehorizont in Tagen
   train_days: 500
   long_windows: [42, 84, 112]   # kurze Fenster, weil die synthetischen Daten nur 800 Tage haben
-  quantiles: [0.5, 0.9]      # taegliche Quantile (nur fuer Genauigkeitsmetriken)
-  backend: sklearn
+  backend: sklearn              # laeuft auch ohne LightGBM
   model_params:
     n_estimators: 100
-    learning_rate: 0.05
-    num_leaves: 63
-    min_child_samples: 50
 
 inventory:
-  lead_time: 3              # Lieferzeit in Tagen (Annahme!)
-  z_grid: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 7.0, 8.0]  # Baseline: Mittelwert + z * Sigma
-  quantile_grid: [0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995, 0.999]  # Quantile der Bedarfssumme
-  min_stock: 1              # Mindestbestand in Einheiten (nur Politiken mit "floor")
-  model_floor: true         # Quantilmodell zusaetzlich mit Mindestbestand (faire Gegenprobe)
-  baselines:                # alle werden ausgewertet; "floor" = Zielniveau mindestens min_stock
-    - {type: mean_z}
-    - {type: mean_z, floor: true}
-    - {type: empirical, days: 84}
-    - {type: empirical, days: 84, floor: true}
-    - {type: empirical, days: 365, floor: true}
-  service_levels: [0.90, 0.95, 0.98]   # Zielwerte fuer den Vergleich
-  cost_ratios: [5, 10, 20, 50, 100]    # Kosten einer entgangenen Einheit / Lagerkosten je Einheit und Tag
+  model_floor: true             # prueft auch die Modellvariante mit Mindestbestand
 
 evaluation:
-  step_days: null           # Abstand der Cutoffs in Tagen; null = horizon (direkt aufeinanderfolgend)
-  n_splits: 3               # rollierende Cutoffs (je 28 Tage Test), fuer Baselines und Quantil-Modelle
-  band_min_valid: 0.3       # Fehlerband: Rasterpunkt erscheint, wenn mindestens dieser Anteil der Ziehungen den Servicegrad erreicht
-  tradeoff_fill_max: 0.995  # Hauptplot: Punkte oberhalb dieses Servicegrads werden nicht gezeichnet; null = alle Punkte
-  n_bootstrap: 100          # Ziehungen fuer die Konfidenzintervalle (Artikel mit Zuruecklegen)
-  bootstrap_seed: 0
+  n_bootstrap: 100

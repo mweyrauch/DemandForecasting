@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import argparse
 
-from dfi.pipeline import Settings, load_config, pool, prepare, run_split
+from dfi.config import load_config
+from dfi.pipeline import Settings, pool, prepare, run_split
 from dfi.report import Report
 
 

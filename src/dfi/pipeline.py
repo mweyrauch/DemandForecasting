@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from .baselines import moving_average
 from .data import load_m5, resolve_data_dir, sales_matrix, to_long
@@ -23,23 +22,6 @@ from .models import feature_importance_all, fit_quantile_models, predict_quantil
 
 MODEL = "quantile_model_window"
 MODEL_FLOOR = "quantile_model_window_floor"
-
-# Kommandozeilen-Argument -> (Abschnitt, Schluessel) in der Konfiguration
-OVERRIDES = {"stores": ("data", "stores"), "categories": ("data", "categories"),
-             "max_series": ("data", "max_series"), "n_splits": ("evaluation", "n_splits"),
-             "step_days": ("evaluation", "step_days")}
-
-
-def load_config(path, **overrides) -> dict:
-    """Liest die YAML-Konfiguration; gesetzte ``overrides`` (siehe ``OVERRIDES``) ersetzen Werte."""
-    with open(path) as fh:
-        cfg = yaml.safe_load(fh)
-    for name, value in overrides.items():
-        if value:
-            section, key = OVERRIDES[name]
-            cfg[section][key] = value
-    return cfg
-
 
 def pinball_elements(y, pred, q):
     d = y - pred

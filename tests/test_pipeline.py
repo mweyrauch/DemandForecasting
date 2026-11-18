@@ -2,7 +2,8 @@ from dataclasses import replace
 
 import numpy as np
 
-from dfi.pipeline import MODEL, MODEL_FLOOR, Settings, SplitResult, load_config, pool
+from dfi.config import deep_merge, load_config
+from dfi.pipeline import MODEL, MODEL_FLOOR, Settings, SplitResult, pool
 
 
 def test_load_config_applies_only_given_overrides():
@@ -48,3 +49,18 @@ def test_pool_does_not_modify_the_split_results():
     pool([first, _split(2)])
     assert np.array_equal(first.pinball[MODEL][0.9], before.pinball[MODEL][0.9])
     assert first.daily_hits == {0.5: 3}
+
+
+def test_deep_merge_merges_sections_and_replaces_lists():
+    base = {"a": {"x": 1, "y": [1, 2]}, "b": 1}
+    merged = deep_merge(base, {"a": {"y": [3]}, "c": 2})
+    assert merged == {"a": {"x": 1, "y": [3]}, "b": 1, "c": 2}
+    assert base == {"a": {"x": 1, "y": [1, 2]}, "b": 1}      # Basis bleibt unveraendert
+
+
+def test_synthetic_config_extends_default():
+    default, synthetic = load_config("configs/default.yaml"), load_config("configs/synthetic.yaml")
+    assert "extends" not in synthetic
+    assert synthetic["forecast"]["backend"] == "sklearn"
+    assert synthetic["forecast"]["model_params"]["num_leaves"] == default["forecast"]["model_params"]["num_leaves"]
+    assert synthetic["inventory"]["baselines"] == default["inventory"]["baselines"]
