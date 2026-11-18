@@ -26,3 +26,14 @@ where = ["src"]
 
 [tool.ruff]
 line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+# feste Regelauswahl, damit neue ruff-Versionen die CI nicht unbemerkt verschaerfen
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["dfi"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

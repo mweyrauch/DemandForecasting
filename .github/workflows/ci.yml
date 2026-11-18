@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Abhängigkeiten installieren
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check src scripts tests
+
+      - name: Unit-Tests
+        run: pytest -q
+
+      - name: Testlauf mit synthetischen Daten
+        run: |
+          python scripts/make_synthetic_m5.py --out data/synthetic
+          python scripts/run_baselines.py --config configs/synthetic.yaml
+          python scripts/train_forecast.py --config configs/synthetic.yaml --out-dir results/ci
+
+      - name: Ergebnisse des Testlaufs hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-testlauf
+          path: results/ci
+          if-no-files-found: ignore
+          retention-days: 7

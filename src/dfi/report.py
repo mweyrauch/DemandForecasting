@@ -12,8 +12,14 @@ import numpy as np
 import pandas as pd
 
 from . import plots
-from .bootstrap import (bootstrap_counts, curve_arrays, curve_bands, interval,
-                        inventory_at_levels, min_cost)
+from .bootstrap import (
+    bootstrap_counts,
+    curve_arrays,
+    curve_bands,
+    interval,
+    inventory_at_levels,
+    min_cost,
+)
 from .inventory import inventory_at_service_level
 from .pipeline import MODEL, Pooled, Prepared, Settings
 

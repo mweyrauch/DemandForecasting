@@ -1,5 +1,7 @@
 # Nachfrageprognose und Bestandsoptimierung (M5)
 
+[![CI](https://github.com/mweyrauch/DemandForecasting/actions/workflows/ci.yml/badge.svg)](https://github.com/mweyrauch/DemandForecasting/actions/workflows/ci.yml)
+
 Wie viel Lagerbestand spart eine probabilistische Nachfrageprognose gegenüber einfachen,
 sorgfältig abgestimmten Bestellregeln? Dieses Projekt beantwortet die Frage auf den
 M5-Verkaufsdaten von Walmart mit Quantilmodellen (LightGBM) und einer Bestandssimulation.

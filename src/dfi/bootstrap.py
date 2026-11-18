@@ -90,8 +90,8 @@ def curve_bands(fill, inv, fill_point, policies, n_grid: int = 40, level: float 
                              for b in range(fill.shape[0])])
             ok = ~np.isnan(vals)
             if ok.mean() >= min_valid:
-                l, h_ = np.percentile(vals[ok], [a, 100 - a])
-                lo.append(l)
+                l_, h_ = np.percentile(vals[ok], [a, 100 - a])
+                lo.append(l_)
                 hi.append(h_)
                 keep.append(g)
         out[pol] = (np.array(keep), np.array(lo), np.array(hi))

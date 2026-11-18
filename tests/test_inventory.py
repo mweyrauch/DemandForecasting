@@ -21,6 +21,7 @@ def test_zero_target_loses_everything():
 
 def test_empirical_quantile_targets_shape_and_level():
     import numpy as np
+
     from dfi.inventory import empirical_quantile_targets
     train = np.tile(np.array([[1.0, 2.0, 3.0, 4.0]]), (1, 25))  # 100 Tage
     tgt = empirical_quantile_targets(train, window=4, q=0.5, n_days=7, emp_days=40)
@@ -30,6 +31,7 @@ def test_empirical_quantile_targets_shape_and_level():
 
 def test_inventory_at_service_level_interpolates_and_does_not_extrapolate():
     import math
+
     from dfi.inventory import inventory_at_service_level
     assert abs(inventory_at_service_level([0.8, 0.9, 1.0], [2, 4, 8], 0.95) - 6.0) < 1e-9
     assert math.isnan(inventory_at_service_level([0.8, 0.9], [2, 4], 0.95))
@@ -37,6 +39,7 @@ def test_inventory_at_service_level_interpolates_and_does_not_extrapolate():
 
 def test_best_cost_by_ratio_picks_cheapest_parameter():
     import pandas as pd
+
     from dfi.inventory import best_cost_by_ratio
     res = pd.DataFrame({
         "policy": ["p", "p"], "param": [1, 2], "fill_rate": [0.8, 0.99],
