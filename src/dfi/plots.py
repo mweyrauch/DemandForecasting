@@ -171,15 +171,12 @@ def plot_inventory_at_sl(data, path):
     _save(fig, path)
 
 
-def plot_pinball(series, path):
-    """series: Liste (Politik-Schluessel, Label, [(q, Verbesserung, lo, hi), ...])."""
+def plot_pinball(rows, path):
+    """rows: [(q, Verbesserung, lo, hi), ...] des Modells gegen die beste empirische Baseline."""
     fig, ax = plt.subplots(figsize=(8, 4.8))
-    qs = [f"{q:g}" for q, *_ in series[0][2]]
-    bars = []
-    for key, label, rows in series:
-        bars.append((dict(POLICY_STYLE[key], label=label),
-                     {f"{q:g}": (p, lo, hi) for q, p, lo, hi in rows}))
-    _grouped_bars(ax, qs, bars, pct=True)
+    data = {f"{q:g}": (p, lo, hi) for q, p, lo, hi in rows}
+    style = dict(POLICY_STYLE[POLICY_ORDER[0]], label="Quantilmodell vs. beste empirische Baseline")
+    _grouped_bars(ax, list(data), [(style, data)], pct=True)
     ax.axhline(0, color="gray", linestyle="--", linewidth=1)
     ax.set_xlabel("Quantil q")
     ax.set_ylabel("Verbesserung des Pinball-Loss")
@@ -190,95 +187,17 @@ def plot_pinball(series, path):
 
 
 def plot_costs(data, path):
-    """data: {Kostenverhaeltnis: {Politik: (Wert, lo, hi)}}; relative Kostendifferenz zur besten Baseline."""
-    ratios = list(data)
-    keys = list(data[ratios[0]])
+    """data: {Kostenverhaeltnis: (Wert, lo, hi)}; relative Kostendifferenz zur besten Baseline."""
     fig, ax = plt.subplots(figsize=(8, 4.8))
-    series = [(dict(POLICY_STYLE[k], label=f"{policy_label(k)} vs. beste Baseline"),
-               {str(r): data[r][k] for r in ratios if k in data[r]}) for k in keys]
-    _grouped_bars(ax, [str(r) for r in ratios], series, pct=True)
+    groups = [str(r) for r in data]
+    style = dict(POLICY_STYLE[POLICY_ORDER[0]], label="Quantilmodell vs. beste Baseline")
+    _grouped_bars(ax, groups, [(style, dict(zip(groups, data.values())))], pct=True)
     ax.axhline(0, color="gray", linestyle="--", linewidth=1)
-    ax.set_xlabel("Kostenverhältnis r (Fehlmenge / Lagerkosten je Einheit und Tag)")
+    ax.set_xlabel("Kostenverhältnis r (Kosten einer fehlenden Einheit / Lagerkosten einer "
+                  "Einheit pro Tag)", fontsize=9)
     ax.set_ylabel("relative Kostendifferenz")
     ax.set_title("Minimale Gesamtkosten (negativ = Modell günstiger)")
     ax.legend(fontsize=8)
-    _save(fig, path)
-
-
-def plot_stability(df, path, level_label="95 %"):
-    """df: Spalte 'split' und je Politik eine Spalte mit dem Lagerbestand."""
-    splits = [str(s) for s in df["split"]]
-    fig, ax = plt.subplots(figsize=(8.5, 4.8))
-    series = []
-    for p in POLICY_ORDER:
-        if p in df.columns:
-            series.append((POLICY_STYLE[p], {str(s): (v, np.nan, np.nan)
-                                             for s, v in zip(df["split"], df[p])}))
-    _grouped_bars(ax, splits, series)
-    ax.set_xlabel("Split (rollierender Cutoff)")
-    ax.set_ylabel("Lagerbestand (Einheiten je Artikel)")
-    ax.set_title(f"Stabilität über die Splits: Lagerbestand bei {level_label} Servicegrad")
-    ax.legend(fontsize=8, ncol=2)
-    _save(fig, path)
-
-
-def plot_wape(data, path):
-    """data: {Name: (WAPE, lo, hi)}; zwei Balken mit Intervall."""
-    names = list(data)
-    styles = [QUANTILE_STYLES[1], QUANTILE_STYLES[0]]
-    fig, ax = plt.subplots(figsize=(5.5, 4.5))
-    series = [(dict(styles[i % 2], label=n), {"WAPE": data[n]}) for i, n in enumerate(names)]
-    _grouped_bars(ax, ["WAPE"], series)
-    ax.set_ylabel("WAPE (kleiner ist besser)")
-    ax.set_title("Tägliche Prognose")
-    ax.legend()
-    _save(fig, path)
-
-
-def plot_bootstrap_histograms(panels, path):
-    """panels: Liste (Titel, x-Beschriftung, [(Label, Politik-Schluessel, Ziehungen, Punktschaetzung)]).
-
-    Echte Histogramme der Bootstrap-Verteilung. Vertikale Linien: Nulllinie (grau, gestrichelt),
-    Punktschaetzung (durchgezogen mit Marker), 95 %-Intervall (gepunktet).
-    """
-    k = len(panels)
-    cols = 2
-    rows = int(np.ceil(k / cols))
-    fig, axes = plt.subplots(rows, cols, figsize=(11, 4 * rows), squeeze=False)
-    for ax, (title, xlabel, series) in zip(axes.ravel(), panels):
-        allv = np.concatenate([np.asarray(d)[~np.isnan(d)] for _, _, d, _ in series])
-        bins = np.linspace(allv.min(), allv.max(), 26)
-        top = 0.0
-        for label, key, draws, point in series:
-            st = POLICY_STYLE[key]
-            d = np.asarray(draws, float)
-            d = d[~np.isnan(d)]
-            n_, _, _ = ax.hist(d, bins=bins, color=st["color"], edgecolor=darken(st["color"]),
-                               hatch=st["hatch"], alpha=0.8, label=label)
-            top = max(top, n_.max())
-        for label, key, draws, point in series:
-            st = POLICY_STYLE[key]
-            d = np.asarray(draws, float)
-            d = d[~np.isnan(d)]
-            lo, hi = np.percentile(d, [2.5, 97.5])
-            c = darken(st["color"], 0.7)
-            ax.axvline(point, color=c, linestyle="-", linewidth=2)
-            ax.plot([point], [top * 1.04], marker=st["marker"], markersize=8,
-                    markerfacecolor=st["color"], markeredgecolor=c, linestyle="none")
-            ax.axvline(lo, color=c, linestyle=":", linewidth=1.5)
-            ax.axvline(hi, color=c, linestyle=":", linewidth=1.5)
-        ax.axvline(0, color="gray", linestyle="--", linewidth=1.2)
-        ax.set_title(title, fontsize=10)
-        ax.set_xlabel(xlabel)
-        ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=1))
-        ax.set_ylabel("Anzahl Bootstrap-Ziehungen")
-        ax.set_ylim(0, top * 1.15)
-        ax.legend(fontsize=8)
-        _style_axes(ax)
-    for ax in axes.ravel()[k:]:
-        ax.axis("off")
-    fig.suptitle("Bootstrap-Verteilungen (durchgezogen: Punktschätzung, gepunktet: 95 %-Intervall)",
-                 fontsize=11)
     _save(fig, path)
 
 

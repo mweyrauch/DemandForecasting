@@ -14,24 +14,14 @@ def test_all_plots_write_files(tmp_path):
     plots.plot_inventory_at_sl({0.9: {"baseline_mean_z": (4.0, 3.5, 4.5),
                                       "quantile_model_window": (3.8, 3.4, 4.2)},
                                 0.98: {"quantile_model_window": (9.0, 8.0, 10.0)}}, tmp_path / "b.png")
-    plots.plot_pinball([("quantile_model_window", "Modell", [(0.5, 0.1, 0.05, 0.15), (0.9, 0.2, 0.1, 0.3)])], tmp_path / "c.png")
-    plots.plot_costs({5: {"quantile_model_window": (-0.02, -0.04, 0.0),
-                          "baseline_mean_z": (-0.05, -0.08, -0.02)}}, tmp_path / "d.png")
-    plots.plot_stability(pd.DataFrame({"split": [1, 2], "baseline_mean_z": [5.0, 5.2],
-                                       "quantile_model_window": [4.8, np.nan]}), tmp_path / "e.png")
-    plots.plot_wape({"gleitender Durchschnitt": (0.75, 0.74, 0.76),
-                     "Quantilmodell (q50)": (0.70, 0.69, 0.71)}, tmp_path / "f.png")
-    rng = np.random.default_rng(0)
-    plots.plot_bootstrap_histograms([
-        ("Test", "x", [("A", "quantile_model_window", rng.normal(0.05, 0.02, 200), 0.05),
-                       ("B", "baseline_mean_z", rng.normal(-0.02, 0.02, 200), -0.02)])],
-        tmp_path / "g.png")
+    plots.plot_pinball([(0.5, 0.1, 0.05, 0.15), (0.9, 0.2, 0.1, 0.3)], tmp_path / "c.png")
+    plots.plot_costs({5: (-0.02, -0.04, 0.0), 20: (-0.05, -0.08, -0.02)}, tmp_path / "d.png")
     feats = np.array(["lag_28", "price_rel", "wday", "item_code"])
     data = {q: (feats, np.array([0.5, 0.2, 0.2, 0.1]) + 0.01 * i, np.array([0.45, 0.15, 0.15, 0.05]),
                 np.array([0.55, 0.25, 0.25, 0.15])) for i, q in enumerate([0.5, 0.9])}
-    plots.plot_feature_importance(data, tmp_path / "h.png")
+    plots.plot_feature_importance(data, tmp_path / "e.png")
     assert plots.feature_label("rmean_28_7").startswith("Ø")
-    for name in "abcdefgh":
+    for name in "abcde":
         assert (tmp_path / f"{name}.png").stat().st_size > 1000
 
 

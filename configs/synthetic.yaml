@@ -14,8 +14,5 @@ forecast:
   model_params:
     n_estimators: 100
 
-inventory:
-  model_floor: true             # prueft auch die Modellvariante mit Mindestbestand
-
 evaluation:
   n_bootstrap: 100

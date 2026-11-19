@@ -39,8 +39,7 @@ class Report:
         self.fig_dir = self.out_dir / "figures"
         self.fig_dir.mkdir(parents=True, exist_ok=True)
         self.rows = []              # Zeilen fuer summary_ci.csv
-        self.hist_panels = []       # Panels fuer die Bootstrap-Histogramme
-        self.best_at_hist = None    # beste Baseline beim Servicegrad des Histogramms
+        self.best_at_95 = None      # beste Baseline bei 95 % Servicegrad (fuer das Fehlerband)
 
         ev = st.cfg["evaluation"]
         n = prep.n_series
@@ -67,7 +66,6 @@ class Report:
         self.costs()
         self.stability()
         self.feature_importance()
-        plots.plot_bootstrap_histograms(self.hist_panels, self.fig_dir / "bootstrap_histograms.png")
         pd.DataFrame(self.rows).to_csv(self.out_dir / "summary_ci.csv", index=False)
         self.run_info()
         print(f"\nErgebnisse gespeichert in {self.out_dir}/")
@@ -102,11 +100,6 @@ class Report:
         print(f"WAPE gleitender Durchschnitt: {w_ma:.4f} | WAPE Modell q50: {w_m:.4f}")
         print(f"Relative Verbesserung des WAPE: {fmt(p0, lo, hi)}")
         self.add("wape_improvement", "model_q50 vs moving_average_28", p0, lo, hi)
-        plots.plot_wape({"gleitender Durchschnitt (28 Tage)": (w_ma, *interval(wB_ma)),
-                         "Quantilmodell (q50)": (w_m, *interval(wB_m))}, self.fig_dir / "wape.png")
-        self.hist_panels.append((
-            "Tägliche Prognose: relative WAPE-Verbesserung", "Verbesserung des WAPE",
-            [("Quantilmodell vs. gleitender Durchschnitt", MODEL, imp, p0)]))
         for q in self.st.daily_quantiles:
             print(f"q={q:<4} Kalibrierung={res.daily_hits[q] / res.daily_total:.3f}  "
                   f"Pinball={res.daily_pinball[q] / res.daily_total:.4f} (ohne Vergleichswert)")
@@ -119,28 +112,17 @@ class Report:
         print(RULE)
         print(f"Bedarfssumme ueber {st.window} Tage: Pinball-Loss Modell vs. beste empirische Baseline")
         print("(positiv = Modell besser; Intervall: 95 %-Bootstrap ueber Artikel)")
-        series = {m: [] for m in st.model_names}
-        draws = {}
+        rows = []
         for q in qg:
             best = min(emp_names, key=lambda nm: (C1 @ pin[nm][q])[0])
-            pe, peB = (C1 @ pin[best][q])[0], C @ pin[best][q]
-            text = (f"q={q:<5} Kalibrierung={res.calib_hits[q] / res.calib_total:.3f}  "
-                    f"beste Baseline: {label(best)}")
-            for m in st.model_names:
-                pm, pmB = (C1 @ pin[m][q])[0], C @ pin[m][q]
-                imp = 1 - pmB / peB
-                p0, (lo, hi) = 1 - pm / pe, interval(imp)
-                text += f"\n         {label(m):<32} {fmt(p0, lo, hi)}"
-                self.add("pinball_improvement", f"{m} vs best empirical ({best}), q={q}", p0, lo, hi)
-                series[m].append((q, p0, lo, hi))
-                draws[(m, q)] = (imp, p0)
-            print(text)
-        plots.plot_pinball([(m, f"{label(m)} vs. beste empirische Baseline", series[m])
-                            for m in st.model_names], self.fig_dir / "pinball_improvement.png")
-        q_hist = min(qg, key=lambda x: abs(x - 0.9))
-        self.hist_panels.append((
-            f"Bedarfssumme: Pinball-Verbesserung bei q={q_hist:g}", "Verbesserung des Pinball-Loss",
-            [(label(m), m, *draws[(m, q_hist)]) for m in st.model_names]))
+            pm, pe = (C1 @ pin[MODEL][q])[0], (C1 @ pin[best][q])[0]
+            imp = 1 - (C @ pin[MODEL][q]) / (C @ pin[best][q])
+            p0, (lo, hi) = 1 - pm / pe, interval(imp)
+            print(f"q={q:<5} Kalibrierung={res.calib_hits[q] / res.calib_total:.3f}  "
+                  f"{fmt(p0, lo, hi)}  (beste Baseline: {label(best)})")
+            self.add("pinball_improvement", f"{MODEL} vs best empirical ({best}), q={q}", p0, lo, hi)
+            rows.append((q, p0, lo, hi))
+        plots.plot_pinball(rows, self.fig_dir / "pinball_improvement.png")
 
     def service_levels(self):
         """Lagerbestand bei festem Servicegrad, Modell gegen die beste Baseline."""
@@ -150,7 +132,6 @@ class Report:
         print(RULE)
         print("Lagerbestand bei festem Servicegrad (Einheiten je Artikel; Vergleich mit der besten Baseline)")
         sl_plot = {}
-        hist_level = 0.95 if 0.95 in levels else levels[len(levels) // 2]
         for sl in levels:
             p1 = inventory_at_levels(self.fill1, self.inv1, policies, sl)
             pB = inventory_at_levels(self.fillB, self.invB, policies, sl)
@@ -175,31 +156,25 @@ class Report:
                 continue
             best = min(reach, key=lambda b: p1[b][0])
             print(f"  Beste Baseline: {label(best)}")
-            series = []
-            for m in st.model_names:
-                if not ok[m]:
-                    continue
-                rel = pB[m] / pB[best] - 1
-                p0, (lo, hi) = p1[m][0] / p1[best][0] - 1, interval(rel)
-                print(f"  {label(m)} vs. beste Baseline: {fmt(p0, lo, hi)}")
-                self.add("inventory_rel_diff", f"{m} vs best baseline ({best}), SL={sl}", p0, lo, hi)
-                series.append((f"{label(m)} vs. {label(best)}", m, rel, p0))
-            if series and sl == hist_level:
-                self.hist_panels.append((
-                    f"Lagerbestand bei {sl:.0%} Servicegrad: relative Differenz",
-                    "relative Differenz des Lagerbestands (negativ = Modell besser)", series))
-                self.best_at_hist = best
+            if sl == 0.95:
+                self.best_at_95 = best
+            if not ok[MODEL]:
+                continue
+            rel = pB[MODEL] / pB[best] - 1
+            p0, (lo, hi) = p1[MODEL][0] / p1[best][0] - 1, interval(rel)
+            print(f"  Quantilmodell vs. beste Baseline: {fmt(p0, lo, hi)}")
+            self.add("inventory_rel_diff", f"{MODEL} vs best baseline ({best}), SL={sl}", p0, lo, hi)
         plots.plot_inventory_at_sl(sl_plot, self.fig_dir / "inventory_at_service_level.png")
 
     def tradeoff(self):
         """Kompromisskurve mit Fehlerband fuer das Modell und die beste Baseline bei 95 %."""
         st, ev, label = self.st, self.st.cfg["evaluation"], plots.policy_label
         curve, policies = self.curve, self.res.policies
-        best = self.best_at_hist
+        best = self.best_at_95
         if best is None:
             reach = {b: curve.loc[curve["policy"] == b, "fill_rate"].max() for b in st.baseline_names}
             best = max(reach, key=reach.get)
-        sel = set(st.model_names[:1] + [best])
+        sel = {MODEL, best}
         cols = [i for i, p in enumerate(policies) if p in sel]
         bands = curve_bands(self.fillB[:, cols], self.invB[:, cols], self.fill1[0][cols],
                             policies[cols], min_valid=float(ev.get("band_min_valid", 0.3)))
@@ -219,24 +194,15 @@ class Report:
         print(RULE)
         print("Minimale Gesamtkosten je Kostenverhaeltnis (negativ = Modell guenstiger als beste Baseline)")
         cost_plot = {}
-        r_hist = 20 if 20 in ratios else ratios[len(ratios) // 2]
         for r in ratios:
             c1 = min_cost(self.C1, res.lost, res.held, res.policies, r)
             cB = min_cost(self.C, res.lost, res.held, res.policies, r)
             best = min(st.baseline_names, key=lambda b: c1[b][0])
-            cost_plot[r] = {}
-            series = []
-            for m in st.model_names:
-                rel = cB[m] / cB[best] - 1
-                p0, (lo, hi) = c1[m][0] / c1[best][0] - 1, interval(rel)
-                print(f"r={r:<4} {label(m):<32} vs. {label(best):<38} {fmt(p0, lo, hi)}")
-                self.add("cost_rel_diff", f"{m} vs best baseline ({best}), r={r}", p0, lo, hi)
-                cost_plot[r][m] = (p0, lo, hi)
-                series.append((f"{label(m)} vs. {label(best)}", m, rel, p0))
-            if r == r_hist:
-                self.hist_panels.append((
-                    f"Gesamtkosten bei Kostenverhältnis r={r}: relative Differenz",
-                    "relative Kostendifferenz (negativ = Modell günstiger)", series))
+            rel = cB[MODEL] / cB[best] - 1
+            p0, (lo, hi) = c1[MODEL][0] / c1[best][0] - 1, interval(rel)
+            print(f"r={r:<4} Quantilmodell vs. {label(best):<38} {fmt(p0, lo, hi)}")
+            self.add("cost_rel_diff", f"{MODEL} vs best baseline ({best}), r={r}", p0, lo, hi)
+            cost_plot[r] = (p0, lo, hi)
         plots.plot_costs(cost_plot, self.fig_dir / "cost_sensitivity.png")
 
     def stability(self):
@@ -255,7 +221,7 @@ class Report:
             stab.append(row)
         stab_df = pd.DataFrame(stab)
         print(stab_df.rename(columns=plots.policy_label).round(2).to_string(index=False))
-        plots.plot_stability(stab_df, self.fig_dir / "stability_splits.png")
+        stab_df.to_csv(self.out_dir / "stability_splits.csv", index=False)
 
     def feature_importance(self):
         st, res, feats = self.st, self.res, self.prep.feats
@@ -288,9 +254,6 @@ class Report:
         plots.plot_feature_importance(
             {q: imp_w[q] for q in q_show}, self.fig_dir / "feature_importance.png",
             title=f"Merkmalswichtigkeit: Bedarfssumme über {st.window} Tage")
-        plots.plot_feature_importance(
-            {q: imp_d[q] for q in st.daily_quantiles}, self.fig_dir / "feature_importance_daily.png",
-            title="Merkmalswichtigkeit: tägliche Prognose")
 
     def run_info(self):
         st, prep, d = self.st, self.prep, self.st.cfg["data"]

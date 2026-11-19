@@ -21,7 +21,6 @@ from .inventory import empirical_quantile_targets, policy_name, simulate_order_u
 from .models import feature_importance_all, fit_quantile_models, predict_quantiles
 
 MODEL = "quantile_model_window"
-MODEL_FLOOR = "quantile_model_window_floor"
 
 def pinball_elements(y, pred, q):
     d = y - pred
@@ -42,7 +41,6 @@ class Settings:
     min_stock: float
     baseline_specs: list
     baseline_names: list
-    model_names: list
     lookbacks: list             # Rueckblicke fuer die Diagnose "Artikel ohne Verkauf"
 
     @classmethod
@@ -55,13 +53,12 @@ class Settings:
             n_splits=ev["n_splits"], step=int(ev.get("step_days") or f["horizon"]),
             min_stock=float(inv.get("min_stock", 1)), baseline_specs=specs,
             baseline_names=[policy_name(s) for s in specs],
-            model_names=[MODEL] + ([MODEL_FLOOR] if inv.get("model_floor") else []),
             lookbacks=sorted({28} | {int(s["days"]) for s in specs if s["type"] == "empirical"}),
         )
 
     @property
     def policy_names(self) -> list:
-        return self.model_names + self.baseline_names
+        return [MODEL] + self.baseline_names
 
 
 @dataclass
@@ -163,8 +160,6 @@ def policy_targets(st: Settings, train_mat, ma, model_pred) -> list:
     targets = []
     for q in st.quantile_grid:
         targets.append((MODEL, q, model_pred[q], True))
-        if MODEL_FLOOR in st.model_names:
-            targets.append((MODEL_FLOOR, q, np.maximum(model_pred[q], st.min_stock), True))
     for spec, name in zip(st.baseline_specs, st.baseline_names):
         floor = st.min_stock if spec.get("floor") else 0.0
         if spec["type"] == "mean_z":

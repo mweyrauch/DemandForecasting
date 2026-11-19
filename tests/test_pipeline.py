@@ -3,7 +3,7 @@ from dataclasses import replace
 import numpy as np
 
 from dfi.config import deep_merge, load_config
-from dfi.pipeline import MODEL, MODEL_FLOOR, Settings, SplitResult, pool
+from dfi.pipeline import MODEL, Settings, SplitResult, pool
 
 
 def test_load_config_applies_only_given_overrides():
@@ -17,7 +17,8 @@ def test_settings_derive_policies_and_window():
     cfg = load_config("configs/synthetic.yaml")
     st = Settings.from_config(cfg)
     assert st.window == st.lead_time + 1 and st.step == st.horizon
-    assert st.model_names == [MODEL, MODEL_FLOOR]
+    assert st.policy_names == [MODEL, "baseline_mean_z_floor", "baseline_empirical_q_84_floor",
+                               "baseline_empirical_q_365_floor"]
     assert st.policy_names[-1] == "baseline_empirical_q_365_floor"
     assert st.lookbacks == [28, 84, 365]
 
