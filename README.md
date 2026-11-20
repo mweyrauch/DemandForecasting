@@ -9,7 +9,7 @@ M5-Verkaufsdaten von Walmart mit Quantilmodellen (LightGBM) und einer Bestandssi
 ## Kernergebnis
 
 Bei 95 % Servicegrad benötigt das Quantilmodell etwa 8 bis 11 % weniger Lagerbestand als die
-beste von fünf Baselines. Im Hauptlauf (Filiale CA_1, Februar bis Mai 2016) sind es 11,2 %
+beste von drei Baselines. Im Hauptlauf (Filiale CA_1, Februar bis Mai 2016) sind es 11,2 %
 (95-%-Intervall: 9,0 bis 13,6 %). Auf zwei weiteren Filialen und über zehn Monate bleibt der
 Vorsprung bei 8,3 bis 9,8 %.
 
@@ -48,7 +48,8 @@ Die vollständigen Tabellen liegen unter [`docs/results/`](docs/results/).
 2. **Quantilmodelle:** LightGBM sagt Quantile der Bedarfssumme über Lieferzeit plus einen Tag
    voraus. Daraus ergibt sich direkt der Zielbestand.
 3. **Baselines:** Mittelwert plus z mal Standardabweichung sowie empirische Quantile über 84 und
-   365 Tage, jeweils auch mit Mindestbestand. Verglichen wird immer mit der besten Baseline.
+   365 Tage, jeweils mit einem Mindestbestand von einer Einheit. Verglichen wird immer mit der
+   besten Baseline.
 4. **Bestandssimulation:** Order-up-to-Politik mit drei Tagen Lieferzeit. Ausgewertet werden
    Lagerbestand bei festem Servicegrad und Gesamtkosten.
 5. **Validierung:** drei rollierende 28-Tage-Fenster, Neutraining je Fenster,

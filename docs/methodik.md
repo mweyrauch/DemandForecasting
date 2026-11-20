@@ -35,11 +35,11 @@ Grenzen und Hinweise zur Ausführung.
    Das Modell für die Bestandsentscheidung sagt die Bedarfssumme über Lieferzeit + 1 Tage direkt
    voraus. Das Trainingsfenster endet so, dass kein Zielfenster in den Testzeitraum reicht.
    Zusätzlich gibt es tägliche Quantilmodelle, die nur der Genauigkeitsmessung (WAPE) dienen.
-3. **Baselines** (`dfi/inventory.py`, Konfiguration `inventory.baselines`):
-   - `baseline_mean_z`: Mittelwert der letzten 28 Tage plus z mal Standardabweichung.
-   - `baseline_empirical_q_<Tage>`: empirisches Quantil der rollierenden Bedarfssummen im
+3. **Baselines** (`dfi/inventory.py`, Konfiguration `inventory.baselines`), alle mit einem
+   Mindestbestand von einer Einheit (`_floor`):
+   - `baseline_mean_z_floor`: Mittelwert der letzten 28 Tage plus z mal Standardabweichung.
+   - `baseline_empirical_q_<Tage>_floor`: empirisches Quantil der rollierenden Bedarfssummen im
      Rückblick von 84 bzw. 365 Tagen.
-   - Varianten mit Mindestbestand (`_floor`): Zielniveau mindestens 1 Einheit.
 4. **Bestandssimulation** (`dfi/inventory.py`): Order-up-to-Politik mit täglicher Disposition und
    Lieferzeit. Jede Politik wird über einen Parameterbereich (z bzw. q) simuliert.
 5. **Vergleich:** Statt einzelner Punkte werden (a) die Kompromisskurven, (b) der Lagerbestand bei
@@ -53,7 +53,7 @@ Grenzen und Hinweise zur Ausführung.
 
 ## Weitere Ergebnisse des Hauptlaufs
 
-- **Gesamtkosten** gegen die beste Baseline: r = 5: −2,0 % [−2,9 %, −0,9 %]; r = 10: −1,3 %
+- **Gesamtkosten** gegen die beste Baseline: r = 5: −3,1 % [−4,0 %, −2,0 %]; r = 10: −1,3 %
   [−2,5 %, −0,4 %]; r = 20: −5,8 % [−6,8 %, −4,6 %]; r = 50: −8,4 % [−10,3 %, −6,6 %];
   r = 100: −8,6 % [−10,8 %, −6,1 %].
 - **Pinball-Loss** bei q ab 0,99: 11 bis 42 % besser. Die empirische Baseline ist dort
@@ -71,10 +71,11 @@ Grenzen und Hinweise zur Ausführung.
 
 ## Diagnose der Baselines
 
-Artikel ohne Verkauf im Rückblick haben bei Baselines ohne Mindestbestand das Zielniveau 0
-(8,0 % der Artikel bei 28 Tagen, 3,3 % bei 84 Tagen, 0,2 % bei 365 Tagen). Das erklärt nur einen
-Teil der Lücke: Die Baselines mit 84 Tagen Rückblick erreichen höchstens etwa 97 % Servicegrad,
-die mit 365 Tagen und Mindestbestand etwa 99,5 %, das Modell etwa 99,8 %.
+Für Artikel ohne Verkauf im Rückblick (8,0 % der Artikel bei 28 Tagen, 3,3 % bei 84 Tagen,
+0,2 % bei 365 Tagen) hätten die Baselines ohne Mindestbestand das Zielniveau 0. Deshalb haben
+alle Baselines einen Mindestbestand von einer Einheit. Trotzdem stoßen sie an Grenzen: Höchstens
+erreichen „Mittelwert + z · σ“ etwa 97,9 % Servicegrad, das empirische Quantil über 84 Tage etwa
+97,4 % und über 365 Tage etwa 99,5 %. Das Modell kommt auf etwa 99,8 %.
 
 Das empirische Quantil kann nie über die größte Bedarfssumme im Rückblick steigen. Seine Kurve
 endet deshalb früh. „Mittelwert + z · σ“ ist nach oben offen, hilft aber nicht bei Artikeln ohne
@@ -126,12 +127,11 @@ an dieser Konstruktion der Baselines.
 | `cost_sensitivity.png` | Relative Kostendifferenz je Kostenverhältnis |
 | `pinball_improvement.png` | Pinball-Verbesserung der Bedarfssumme je Quantil |
 | `feature_importance.png` | Merkmalswichtigkeit (Gain) der Bedarfssummen-Modelle |
-| `feature_importance_daily.png` | Dasselbe für die täglichen Quantilmodelle |
-| `stability_splits.png` | Lagerbestand bei 95 % Servicegrad je Fenster |
-| `wape.png` | WAPE der täglichen Prognose |
-| `bootstrap_histograms.png` | Bootstrap-Verteilungen der wichtigsten Differenzen |
 
-`scripts/summarize_runs.py` schreibt zusätzlich `results/confirmation/confirmation_forest.png`.
+Die Zahlen ohne eigene Abbildung (WAPE der täglichen Prognose, Stabilität je Fenster, tägliche
+Merkmalswichtigkeit) stehen in der Konsolenausgabe sowie in `summary_ci.csv`,
+`stability_splits.csv` und `feature_importance.csv`. `scripts/summarize_runs.py` schreibt
+zusätzlich `results/confirmation/confirmation_forest.png`.
 
 ## Mögliche nächste Schritte
 
