@@ -62,6 +62,6 @@ def test_deep_merge_merges_sections_and_replaces_lists():
 def test_synthetic_config_extends_default():
     default, synthetic = load_config("configs/default.yaml"), load_config("configs/synthetic.yaml")
     assert "extends" not in synthetic
-    assert synthetic["forecast"]["backend"] == "sklearn"
+    assert synthetic["forecast"]["model_params"]["n_estimators"] == 100
     assert synthetic["forecast"]["model_params"]["num_leaves"] == default["forecast"]["model_params"]["num_leaves"]
     assert synthetic["inventory"]["baselines"] == default["inventory"]["baselines"]

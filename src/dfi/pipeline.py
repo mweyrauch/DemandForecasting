@@ -198,16 +198,15 @@ def run_split(prep: Prepared, st: Settings, c: int) -> SplitResult:
 
     # Modell 1: taegliche Quantile (nur fuer die Genauigkeitsmessung)
     qs = st.daily_quantiles
-    md = fit_quantile_models(train_d[feats], train_d["sales"], qs, f["backend"], f["model_params"])
-    imp_daily = feature_importance_all(md, feats, f["backend"], train_d, train_d["sales"])
+    md = fit_quantile_models(train_d[feats], train_d["sales"], qs, f["model_params"])
+    imp_daily = feature_importance_all(md)
     P = {q: v.reshape(n, h) for q, v in predict_quantiles(md, test[feats]).items()}
     ma = moving_average(train_mat, h, 28)
 
     # Modell 2: Bedarfssumme ueber Lieferzeit + 1 Tage
     qg = st.quantile_grid
-    mw = fit_quantile_models(train_w[feats], train_w["target_window"], qg,
-                             f["backend"], f["model_params"])
-    imp_window = feature_importance_all(mw, feats, f["backend"], train_w, train_w["target_window"])
+    mw = fit_quantile_models(train_w[feats], train_w["target_window"], qg, f["model_params"])
+    imp_window = feature_importance_all(mw)
     PW = {q: v.reshape(n, h) for q, v in predict_quantiles(mw, test[feats]).items()}
     yw = test["target_window"].to_numpy().reshape(n, h)
     valid = ~np.isnan(yw)                       # am Datenende ist das Fenster unvollstaendig

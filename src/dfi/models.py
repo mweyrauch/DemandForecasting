@@ -1,24 +1,16 @@
-"""Quantil-Modelle (LightGBM oder scikit-learn)."""
+"""Quantil-Modelle mit LightGBM."""
 from __future__ import annotations
 
 import numpy as np
+from lightgbm import LGBMRegressor
 
 
-def _make_model(q: float, backend: str, params: dict):
-    if backend == "lightgbm":
-        from lightgbm import LGBMRegressor
-        return LGBMRegressor(objective="quantile", alpha=q, verbose=-1, random_state=0, **params)
-    if backend == "sklearn":
-        from sklearn.ensemble import HistGradientBoostingRegressor
-        p = {"max_iter": params.get("n_estimators", 200),
-             "learning_rate": params.get("learning_rate", 0.05)}
-        return HistGradientBoostingRegressor(loss="quantile", quantile=q, random_state=0, **p)
-    raise ValueError(f"Unbekanntes Backend: {backend}")
-
-
-def fit_quantile_models(X, y, quantiles, backend="lightgbm", params=None) -> dict:
+def fit_quantile_models(X, y, quantiles, params=None) -> dict:
+    """Ein LightGBM-Modell je Quantil."""
     params = params or {}
-    return {q: _make_model(q, backend, params).fit(X, y) for q in quantiles}
+    return {q: LGBMRegressor(objective="quantile", alpha=q, verbose=-1, random_state=0,
+                             **params).fit(X, y)
+            for q in quantiles}
 
 
 def predict_quantiles(models: dict, X) -> dict:
@@ -29,31 +21,17 @@ def predict_quantiles(models: dict, X) -> dict:
     return {q: stacked[:, i] for i, q in enumerate(qs)}
 
 
-def feature_importance(model, feats, backend, X=None, y=None, q: float = 0.5,
-                       n_sample: int = 3000, seed: int = 0) -> np.ndarray:
-    """Normierte Merkmalswichtigkeit (Summe 1).
+def feature_importance(model) -> np.ndarray:
+    """Normierte Merkmalswichtigkeit (Summe 1) nach Gain.
 
-    lightgbm: Gain, also der summierte Gewinn aller Splits eines Merkmals.
-    sklearn:  Permutationswichtigkeit auf einer Stichprobe (Anstieg des Pinball-Loss).
-    Hinweis: Beide Masse sind keine kausalen Effekte; korrelierte Merkmale teilen sich die
-    Wichtigkeit.
+    Gain ist der summierte Gewinn aller Splits eines Merkmals. Das ist kein kausaler Effekt;
+    korrelierte Merkmale teilen sich die Wichtigkeit.
     """
-    if backend == "lightgbm":
-        imp = np.asarray(model.booster_.feature_importance(importance_type="gain"), float)
-    elif backend == "sklearn":
-        from sklearn.inspection import permutation_importance
-        from sklearn.metrics import make_scorer, mean_pinball_loss
-        idx = np.random.default_rng(seed).choice(len(X), size=min(n_sample, len(X)), replace=False)
-        scorer = make_scorer(mean_pinball_loss, alpha=q, greater_is_better=False)
-        res = permutation_importance(model, X.iloc[idx][feats], np.asarray(y)[idx], scoring=scorer,
-                                     n_repeats=2, random_state=seed)
-        imp = np.clip(res.importances_mean, 0, None)
-    else:
-        raise ValueError(f"Unbekanntes Backend: {backend}")
+    imp = np.asarray(model.booster_.feature_importance(importance_type="gain"), float)
     total = imp.sum()
     return imp / total if total > 0 else imp
 
 
-def feature_importance_all(models: dict, feats, backend, X=None, y=None) -> dict:
+def feature_importance_all(models: dict) -> dict:
     """Wichtigkeit je Quantilmodell: {q: Array ueber die Merkmale}."""
-    return {q: feature_importance(m, feats, backend, X, y, q) for q, m in models.items()}
+    return {q: feature_importance(m) for q, m in models.items()}

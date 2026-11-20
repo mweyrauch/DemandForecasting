@@ -10,7 +10,6 @@ data:
 forecast:
   train_days: 500
   long_windows: [42, 84, 112]   # kurze Fenster, weil die synthetischen Daten nur 800 Tage haben
-  backend: sklearn              # laeuft auch ohne LightGBM
   model_params:
     n_estimators: 100
 
